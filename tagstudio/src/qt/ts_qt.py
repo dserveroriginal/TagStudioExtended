@@ -89,6 +89,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.extensions.core.src.qt.ts_ex_core_qt import format_menu
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -304,6 +305,7 @@ class QtDriver(QObject):
         macros_menu = QMenu("&Macros", menu_bar)
         window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
+        extension_menu = QMenu("E&xtensions", menu_bar)
 
         # File Menu ============================================================
         # file_menu.addAction(QAction('&New Library', menu_bar))
@@ -500,6 +502,11 @@ class QtDriver(QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
+        print(extension_menu)
+        extension_menu = format_menu(extension_menu,self.core.ext)
+        print(extension_menu)
+        menu_bar.addMenu(extension_menu)
+        # format_menu(,self.core.ext)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
