@@ -43,10 +43,11 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
@@ -177,6 +178,8 @@ class QtDriver(QObject):
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
 
+        self.search_mode = SearchMode.AND
+
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
 
@@ -228,7 +231,7 @@ class QtDriver(QObject):
             None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
         )
         if dir not in (None, ""):
-            self.open_library(dir)
+            self.open_library(Path(dir))
 
     def signal_handler(self, sig, frame):
         if sig in (SIGINT, SIGTERM, SIGQUIT):
@@ -530,13 +533,21 @@ class QtDriver(QObject):
         elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
             lib = self.settings.value(SettingItems.LAST_LIBRARY)
 
+            # TODO: Remove this check if the library is no longer saved with files
+            if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
+                logging.error(
+                    f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist."
+                )
+                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
+                lib = None
+
         if lib:
             self.splash.showMessage(
                 f'Opening Library "{lib}"...',
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
-            self.open_library(lib)
+            self.open_library(Path(lib))
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
@@ -562,6 +573,12 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1333,7 +1350,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
@@ -1374,6 +1391,10 @@ class QtDriver(QObject):
 
             # self.update_thumbs()
 
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
+
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
         self.settings.remove(item_key)
@@ -1407,23 +1428,15 @@ class QtDriver(QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path):
+    def open_library(self, path: Path):
         """Opens a TagStudio library."""
         if self.lib.library_dir:
             self.save_library()
             self.lib.clear_internal_vars()
 
-        self.main_window.statusbar.showMessage(f"Opening Library {path}", 3)
+        self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
-            # if self.args.external_preview:
-            # 	self.init_external_preview()
-
-            # if len(self.lib.entries) <= 1000:
-            # 	print(f'{INFO} Checking for missing files in Library \'{self.lib.library_dir}\'...')
-            # 	self.lib.refresh_missing_files()
-            # title_text = f'{self.base_title} - Library \'{self.lib.library_dir}\''
-            # self.main_window.setWindowTitle(title_text)
             pass
 
         else:
