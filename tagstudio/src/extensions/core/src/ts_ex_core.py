@@ -23,23 +23,47 @@ import os
 
 
 class Extension:
-    """ Base extension class
+    """Base extension class"""
 
-    """    
-    def __init__(self, config: dict,  path: str) -> None:
-        """ Creates base class
+    def __init__(self, config: dict, path: str) -> None:
+        """Creates base class
 
         Args:
-            config (dict): json part 
+            config (dict): json part
             path (str): extension path
-        """        
+        """
         self.name = config.get("name")
         self.version = config.get("version")
         self.dependencies = config.get("dedependencies")
-        self.image_path = os.path.join(path, config.get("image"))
-        self.active=False
-        print(self)
-        
+        self.image_path = path + "/" + config.get("image")
+        self.active = False
+        return
+
+    def activate(self) -> None:
+        """virtual activation method"""
+        self.active = True
+        return
+
+    def deactivate(self) -> None:
+        """virtual deactivation method"""
+        self.active = False
+        return
+
+    def statistics(self) -> dict:
+        """returns all data about extension
+
+        Returns:
+            dict: all dat
+        """
+        return {
+            "name": self.name,
+            "version": self.version,
+            "dependencies": self.dependencies,
+            "image": self.image_path,
+            "active": self.active,
+        }
+
+
 class CoreExtension(Extension):
     """Core extension class
 
@@ -47,24 +71,39 @@ class CoreExtension(Extension):
     Args:
         Extension (class): Base extension class
 
-    """    
-    def __init__(self, path:str) -> None:
-        """ Creates core extension class
+    """
+
+    def __init__(self, path_str: str) -> None:
+        """Creates core extension class
 
         Args:
             path (str): extension path
-        """        
-        self.path=os.path.join(path,"tagstudio","src","extensions")
-        self.config=os.path.join(self.path,"ts_ex_library.json")
-        print(self.config)
-        file=open(self.config)
-        self.config=json.load(file)
-        self.extensions=self.config.get("extensions")
-        Extension.__init__(self,self.extensions[0],path)
-        
-            
-        
+        """
+        self.path = path_str + "/tagstudio/src/extensions"
+        self.config = self.path + "/ts_ex_library.json"
+        file = open(self.config)
+        self.config = json.load(file)
+        core = self.path + "/core/stats.json"
+        core = open(core)
+        core = json.load(core)
+        self.extensions = self.config.get("extensions")
+        Extension.__init__(self, core, self.path)
+        self.activate()
+        return
 
+    def gen_tg_ex_library(self) -> None:
+        base = self.path + "/core/assets/ts_ex_library_base.json"
+
+        return base
+
+    def activate(self) -> None:
+        self.active = True
+        return
+
+    def deactivate(self) -> None:
+        # self.active=False
+        # should not be deactivated
+        return
 
 
 class TSApi:
@@ -72,6 +111,7 @@ class TSApi:
 
     Args:
         object (_type_): _description_
-    """    
+    """
+
     def __init__(self, path) -> None:
         self.path = path

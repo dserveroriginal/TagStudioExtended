@@ -1,4 +1,4 @@
-from src.core.library import Tag
+from tagstudio.src.core.library import Tag
 
 
 def test_construction():
