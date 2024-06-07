@@ -12,6 +12,7 @@ from src.core.library import Entry, Library
 from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
 from src.extensions.core.src.ts_ex_core import CoreExtension
 
+
 class TagStudioCore:
     """
     Instantiate this to establish a TagStudio session.
@@ -20,7 +21,7 @@ class TagStudioCore:
 
     def __init__(self):
         self.lib: Library = Library()
-        self.ext: CoreExtension = CoreExtension(Path.cwd())
+        self.ext: CoreExtension = CoreExtension(str(Path.cwd()))
 
     def get_gdl_sidecar(self, filepath: str | Path, source: str = "") -> dict:
         """
