@@ -1,0 +1,11 @@
+{
+    "name": "test",
+    "version": 1,
+    "dependencies": {
+        "ts_ex": {
+            "compare": "hi",
+            "version": "9.2.1"
+        }
+    },
+    "image": "/assets/icon_core.png"
+}

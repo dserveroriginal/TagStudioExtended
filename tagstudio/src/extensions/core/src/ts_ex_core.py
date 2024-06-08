@@ -19,7 +19,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Core Extension
 
 import json
-import os
+import pathlib
 
 
 class Extension:
@@ -83,18 +83,30 @@ class CoreExtension(Extension):
         self.config = self.path + "/ts_ex_library.json"
         file = open(self.config)
         self.config = json.load(file)
-        core = self.path + "/core/stats.json"
-        core = open(core)
-        core = json.load(core)
-        self.extensions = self.config.get("extensions")
-        Extension.__init__(self, core, self.path)
+        self.refresh_library()
+        extensions = self.config["extensions"]
+        Extension.__init__(self, extensions[0], self.path)
         self.activate()
         return
 
-    def gen_tg_ex_library(self) -> None:
-        base = self.path + "/core/assets/ts_ex_library_base.json"
+    def refresh_library(self) -> None:
+        base_path = self.path + "/core/assets/ts_ex_library_base.json"
+        base_file = open(base_path)
+        base = json.load(base_file)
+        core_path = self.path + "/core/stats.json"
+        core_file = open(core_path)
+        core = json.load(core_file)
+        base["extensions"][0] = core
+        extensions = pathlib.Path(self.path).glob("_*")
+        extensions_paths = []
+        for extension in extensions:
+            extensions_paths.append(str(extension))
 
-        return base
+        self.config = base
+        return extensions_paths
+
+    def get_extensions(self) -> dict:
+        return self.config["extensions"]
 
     def activate(self) -> None:
         self.active = True

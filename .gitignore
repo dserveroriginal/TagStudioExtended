@@ -255,4 +255,4 @@ TagStudio.ini
 
 # Extensions
 
-tagstudio/src/extensions/_*
+tagstudio/src/extensions/_
